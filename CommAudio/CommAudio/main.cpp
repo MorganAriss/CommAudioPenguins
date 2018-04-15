@@ -808,7 +808,6 @@ void serverDownload(WPARAM wParam, PTSTR fileName)
 		ReadFile(hFile, outBuf, FILE_BUFF_SIZE, &bytesRead, NULL);
 		if (bytesRead == 0)
 		{
-			/* End of file, close & exit. */
 			send(wParam, "Last Pkt\0", 9, 0);
 			CancelIo(hFile);
 			break;
@@ -823,10 +822,34 @@ void serverDownload(WPARAM wParam, PTSTR fileName)
 				closesocket(wParam);
 			}
 		}
-		Sleep(1); /* Give the client some time to catch up with us */
+		Sleep(1); 
 	}
 }
 
+
+
+/*-------------------------------------------------------------------------------------------------
+--	FUNCTION:	clientDownload()
+--
+--	DATE:		April 3rd, 2018
+--
+--	DESIGNER:	Morgan Ariss
+--
+--	PROGRAMMER:	Morgan Ariss
+--
+--	INTERFACE:	clientDownload(WPARAM wParam)
+--
+--	ARGUMENTS:	LPVOID iValue
+--
+--	RETURNS:	void
+--
+--	NOTES:
+--		Called asynchronously upon a request type set to download if the
+--		connection has already been established.  It opens the file and writes the
+--		incoming packet to the end of it, and displays a message when we are done
+--		transferring.
+--
+-------------------------------------------------------------------------------------------------*/
 void clientDownload(WPARAM wParam)
 {
 	char buff[FILE_BUFF_SIZE];
