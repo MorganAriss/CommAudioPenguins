@@ -13,6 +13,7 @@ static CRITICAL_SECTION waveCriticalSection;
 static WAVEHDR*			waveBlocks;
 static volatile int		waveFreeBlockCount;
 static int				waveCurrentBlock;
+static int received = FALSE;
 
 TCHAR	szAppName[] = TEXT("Comm Audio");
 
@@ -654,6 +655,31 @@ DWORD WINAPI sendStream(LPVOID iValue)
 	ExitThread(0);
 }
 
+/*-----------------------------------------------------------------------------
+--	FUNCTION:		waveOutProc
+--
+--	DATE:			April 5th, 2018
+--
+--	REVISIONS:
+--
+--	DESIGNER(S):	Morgan Ariss
+--	PROGRAMMER(S):	Morgan Ariss
+--
+--	INTERFACE:		waveOutProc(HWAVEOUT hWaveOut, UINT uMsg, DWORD dwInstance,
+--								DWORD dwParam1, DWORD dwParam2)
+--
+--	ARGUMENTS:		HWAVEOUT hWaveOut: Handle to the audio output device
+--					UINT uMesg: Message that the procedure handles
+--					DWORD dwInstance: The procedure's instance
+--					DWORD dwParam1 & dwParam2: Unknown and forgotten.
+--
+--	RETURNS:		void
+--
+--	NOTES: 
+--		The callback function which is used in the asynchronous call to play
+--		the audio file this work is done in a separate thread. It tracks free
+--		blocks in a critical section counteracted by the writeAudio function.
+-----------------------------------------------------------------------------*/
 static void CALLBACK waveOutProc(HWAVEOUT hWaveOut, UINT uMsg, DWORD dwInstance,
 	DWORD dwParam1, DWORD dwParam2)
 {
@@ -1396,8 +1422,6 @@ void TCPSocket(HWND hwnd, WPARAM wParam, LPARAM lParam)
 		break;
 	}
 }
-
-static int received = FALSE;
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 	switch (message)
