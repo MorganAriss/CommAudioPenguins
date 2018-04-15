@@ -25,18 +25,18 @@ HWAVEOUT		hWaveOut;
 static BOOL		streamActive;
 static HANDLE	streamThread;
 
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) 
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
 	MSG msg;
 
 	ghWndMain = InitializeGUI(hInstance, nCmdShow);
 
-	while (GetMessage(&msg, NULL, 0, 0)) {	
+	while (GetMessage(&msg, NULL, 0, 0)) {
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
 	}
 
-	return (int) msg.wParam;
+	return (int)msg.wParam;
 }
 
 HWND InitializeGUI(HINSTANCE hInst, int nCmdShow) {
@@ -78,15 +78,6 @@ HWND InitializeGUI(HINSTANCE hInst, int nCmdShow) {
 	streamActive = FALSE;
 
 	return ghWndMain;
-}
-
-void InitializeWindow(HWND hWnd) 
-{
-	ghDlgMain = CreateDialog(ghInst, MAKEINTRESOURCE(IDD_MAIN), hWnd, MainDlgProc);
-
-	if (ghDlgMain == NULL) {
-		MessageBox(hWnd, TEXT("Failed to create ghDlgMain!"), NULL, MB_OK | MB_ICONSTOP);
-	}
 }
 
 void initializeClient(HWND hwnd, int type)
@@ -244,7 +235,7 @@ void sendFileList(WPARAM wParam)
 			}
 		}
 	}
-	else { 
+	else {
 		receiveFileList(wParam, buf);
 	}
 }
@@ -426,6 +417,7 @@ BOOL stopLocalFile(void)
 {
 	MCI_GENERIC_PARMS stop;
 	MCI_GENERIC_PARMS close;
+
 	int          errno;
 
 	if (deviceID)
@@ -503,13 +495,35 @@ void beginMicRecord()
 	waveInPrepareHeader(hWaveIn, pWaveHdr2, sizeof(WAVEHDR));
 }
 
+/*-------------------------------------------------------------------------------------------------
+--	FUNCTION:	ReceiveStream()
+--
+--	DATE:		April 3rd, 2018
+--
+--	DESIGNER:	Morgan Ariss
+--
+--	PROGRAMMER:	Morgan Ariss
+--
+--	INTERFACE:	receiveStream(LPVOID iValue)
+--
+--	ARGUMENTS:	LPVOID iValue
+--
+--	RETURNS:	DWORD; always void
+--
+--	NOTES:
+--		This function handles sending the receiving the audio stream. A circular buffer is created
+--		using memory allocation, where blocks are assigned and freed in a circular manner. This
+--		allows clients to join into the server late and still be able to listen to a normal stream.
+--		The memory allocation is used to overwrite the least recent blocks.
+--
+-------------------------------------------------------------------------------------------------*/
 DWORD WINAPI receiveStream(LPVOID iValue)
 {
 	WAVEFORMATEX	wfx;
 	char			buff[BLOCK_SIZE];
 	int				i, n, rLen;
 	DWORD			outBytes = 0;
-	char			* play_byte = "1";
+	const char*		play_byte = "1";
 	BOOL			firstRun = TRUE;
 
 	rLen = sizeof(udp_remote);
@@ -523,7 +537,7 @@ DWORD WINAPI receiveStream(LPVOID iValue)
 
 	while (TRUE)
 	{
-		if (cInfo.request != MULTI_STREAM) 
+		if (cInfo.request != MULTI_STREAM)
 		{
 			sendto(cInfo.udpSocket, play_byte, sizeof(play_byte), 0, (struct sockaddr *)&udp_remote, rLen);
 		}
@@ -740,7 +754,7 @@ void writeAudio(LPSTR data, int size)
 DWORD WINAPI receiveMicThread(LPVOID iValue) {
 	char micBuff[BLOCK_SIZE];
 	int rLen;
-	char * play_byte = "1";
+	const char* play_byte = "1";
 
 	waveBlocks = allocateBlocks(BLOCK_SIZE, BLOCK_COUNT);
 	waveFreeBlockCount = BLOCK_COUNT;
@@ -822,7 +836,6 @@ void clientDownload(WPARAM wParam)
 	int bytesRead;
 	DWORD Flags = 0;
 
-	/* Final parameter of WriteFile() which tells it to append the data to the end */
 	memset(&lpOver, 0, sizeof(OVERLAPPED));
 	lpOver.Offset = lpOver.OffsetHigh = 0xFFFFFFFF;
 	memset(buff, 0, sizeof(buff));
@@ -856,7 +869,6 @@ void clientDownload(WPARAM wParam)
 			return;
 		}
 
-		/* Append the data to the end of the file & close it */
 		WriteFile(hFile, buff, bytesRead, &bytesWritten, &lpOver);
 		CloseHandle(hFile);
 	}
@@ -1037,7 +1049,7 @@ void Command(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
 		memset(pathName, 0, FILE_BUFF_SIZE);
 		browseLocalFiles(hwnd, fileName, pathName);
 		if (initializeLocalFile(hwnd, fileName) == FALSE) {
-			busyFlag = 0; 
+			busyFlag = 0;
 		}
 		break;
 
@@ -1050,7 +1062,7 @@ int Create(HWND hwnd, LPCREATESTRUCT lpCreateStruct)
 {
 	static TCHAR szFilter[] = TEXT("All Files (*.*)\0*.*\0\0");
 
-	InitializeWindow(hwnd);
+	ghDlgMain = CreateDialog(ghInst, MAKEINTRESOURCE(IDD_MAIN), hwnd, MainDlgProc);
 
 	ofn.lStructSize = sizeof(OPENFILENAME);
 	ofn.hwndOwner = hwnd;
@@ -1075,12 +1087,12 @@ int Create(HWND hwnd, LPCREATESTRUCT lpCreateStruct)
 
 	busyFlag = 0;
 	memset((char *)&cInfo, 0, sizeof(connectInfo));
-	
+
 	cInfo.tcp_port = TCP_PORT;
 	cInfo.udp_port = UDP_PORT;
 
 	ghMenu = GetMenu(hwnd);
-	
+
 	EnableMenuItem(ghMenu, ID_FILE_CONNECT, MF_GRAYED);
 	EnableMenuItem(ghMenu, ID_FILE_DISCONNECT, MF_GRAYED);
 	EnableMenuItem(ghMenu, ID_SINGLE_DL, MF_GRAYED);
@@ -1091,11 +1103,11 @@ int Create(HWND hwnd, LPCREATESTRUCT lpCreateStruct)
 	checkMenuItem(0);
 
 	ghStatus = CreateStatusWindow(WS_CHILD | WS_VISIBLE, "Status: Disconnected", hwnd, STATUS_BAR);
-	
+
 	SendMessage(ghStatus, SB_SETPARTS, (WPARAM)nParts, (LPARAM)&width);
 	SendMessage(ghStatus, SB_SETTEXT, (WPARAM)parts[1], (LPARAM)"Mode:");
 	SendMessage(ghStatus, SB_SETTEXT, (WPARAM)parts[2], (LPARAM)"IP:");
-	
+
 	return TRUE;
 }
 
@@ -1135,9 +1147,6 @@ void TCPSocket(HWND hwnd, WPARAM wParam, LPARAM lParam)
 	int bytesRead;
 	int cSize;
 
-	int errNum;
-	char *error;
-
 	switch (WSAGETSELECTEVENT(lParam))
 	{
 	case FD_ACCEPT:
@@ -1159,31 +1168,6 @@ void TCPSocket(HWND hwnd, WPARAM wParam, LPARAM lParam)
 		break;
 
 	case FD_CONNECT:
-		if ((errNum = WSAGETSELECTERROR(lParam)) == 0)
-		{
-			break;
-		}
-
-		switch (errNum)
-		{
-		case WSAECONNREFUSED:
-			error = "Server full.  Try again later.\0";
-			break;
-
-		case WSAEISCONN:
-			error = "Already connected!\0";
-			break;
-
-		case WSAETIMEDOUT:
-			error = "Connection attempt timed out.\0";
-			break;
-
-		default:
-			error = "Connection error!\0";
-			break;
-		}
-
-		MessageBox(ghWndMain, error, (LPCSTR)"Error!", MB_OK | MB_ICONSTOP);
 		break;
 
 	case FD_READ:
@@ -1226,8 +1210,7 @@ void TCPSocket(HWND hwnd, WPARAM wParam, LPARAM lParam)
 				streamThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)sendStream, (LPVOID)wParam, 0, 0);
 				if (streamThread == NULL)
 				{
-					MessageBox(ghWndMain, (LPCSTR)"Thread creation failed",
-						(LPCSTR)"Error!", MB_OK | MB_ICONSTOP);
+					// Fatal error
 					ExitProcess(1);
 				}
 			}
@@ -1241,7 +1224,8 @@ void TCPSocket(HWND hwnd, WPARAM wParam, LPARAM lParam)
 					cInfo.request = SINGLE_DL;
 					sendFileList(wParam);
 				}
-				else if (strcmp(buff, "Single Upload") == 0) {
+				else if (strcmp(buff, "Single Upload") == 0)
+				{
 					cInfo.request = SINGLE_UP;
 				}
 				else if (strcmp(buff, "Stream") == 0)
@@ -1275,7 +1259,8 @@ void TCPSocket(HWND hwnd, WPARAM wParam, LPARAM lParam)
 				Sleep(1);
 				clientDownload(wParam);
 			}
-			else if (cInfo.request == SINGLE_UP) {
+			else if (cInfo.request == SINGLE_UP)
+			{
 				if ((bytesRead = recv(wParam, buff, FILE_BUFF_SIZE, 0)) == -1)
 				{
 					if (WSAGetLastError() != WSAEWOULDBLOCK)
@@ -1286,7 +1271,7 @@ void TCPSocket(HWND hwnd, WPARAM wParam, LPARAM lParam)
 					}
 				}
 				if (strncmp(buff, "NO", 2) == 0) {
-					MessageBox(ghWndMain, (LPCSTR)"Server says NO!",
+					MessageBox(ghWndMain, (LPCSTR)"Server has no mic!",
 						(LPCSTR)"Error!", MB_OK | MB_ICONSTOP);
 					ExitProcess(1);
 				}
@@ -1402,7 +1387,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 		HANDLE_MSG(hWnd, WM_TCP_SOCKET, TCPSocket);
 		HANDLE_MSG(hWnd, WM_DESTROY, Destroy);
 
-	case MM_WIM_OPEN:  
+	case MM_WIM_OPEN:
 		pSaveBuff = reinterpret_cast<PBYTE> (realloc(pSaveBuff, 1));
 
 		waveInAddBuffer(hWaveIn, pWaveHdr1, sizeof(WAVEHDR));
@@ -1462,7 +1447,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 			SendMessage(ghWndMain, WM_SYSCOMMAND, SC_CLOSE, 0L);
 		break;
 
-	case MM_WOM_OPEN: 
+	case MM_WOM_OPEN:
 		pWaveHdr3 = reinterpret_cast<PWAVEHDR> (malloc(sizeof(WAVEHDR)));
 		pWaveHdr4 = reinterpret_cast<PWAVEHDR> (malloc(sizeof(WAVEHDR)));
 		pOutBuff = reinterpret_cast<PBYTE> (GlobalAlloc(0, BLOCK_SIZE));
@@ -1587,7 +1572,7 @@ BOOL CALLBACK ServerProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 	return FALSE;
 }
 
-BOOL CALLBACK MainDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
+BOOL CALLBACK MainDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	HMENU hMenu;
 	char	fileName[FILE_BUFF_SIZE];
