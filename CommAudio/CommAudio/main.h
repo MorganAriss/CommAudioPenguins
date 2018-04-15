@@ -49,6 +49,8 @@
 #define MULTI_STREAM	4
 #define MICROPHONE		5
 
+#define INP_BUFFER_SIZE 44100
+
 /* Custom Message Cracker Definition */
 #define HANDLE_WM_TCP_SOCKET(hwnd, wParam, lParam, fn) \
 	((fn)((hwnd), (wParam), (lParam)), 0L)
@@ -95,7 +97,7 @@ void initializeButtons(void);
 
 /* Local File */
 BOOL initializeLocalFile(HWND hwnd, char * filename);
-BOOL stopLocalFile(void);
+void stopLocalFile(void);
 BOOL browseLocalFiles(HWND hwnd, PTSTR pstrFileName, PTSTR pstrTitleName);
 
 /* Networking */
