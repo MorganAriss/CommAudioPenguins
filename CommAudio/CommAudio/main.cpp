@@ -694,6 +694,30 @@ static void CALLBACK waveOutProc(HWAVEOUT hWaveOut, UINT uMsg, DWORD dwInstance,
 	LeaveCriticalSection(&waveCriticalSection);
 }
 
+
+/*-----------------------------------------------------------------------------
+--	FUNCTION:		allocateBlocks
+--
+--	DATE:			April 7th, 2018
+--
+--	REVISIONS:
+--
+--	DESIGNER(S):	Morgan Ariss
+--
+--	PROGRAMMER(S):	Morgan Ariss
+--
+--	INTERFACE:		allocateBlocks(int size, int count)
+--						
+--	ARGUMENTS:		int size: size of each block
+--					int count: number of blocks
+--
+--	RETURNS:		WAVEHDR*: Pointer to the allocated blocks.
+--
+--	NOTES: 
+--		Allocates a buffer for data to be received in. Frees up any existing blocks.
+--		Performs a heapAlloc to ready the entire set; if this fails the process exits.
+--		Sets up pointers for each bit, returns the WAVEHDR* of blocks.
+-----------------------------------------------------------------------------*/
 WAVEHDR* allocateBlocks(int size, int count)
 {
 	unsigned char* buff;
@@ -707,12 +731,11 @@ WAVEHDR* allocateBlocks(int size, int count)
 	/* allocate memory for the entire set in one go */
 	if ((buff = reinterpret_cast<unsigned char *> (HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, totalbuffSize))) == NULL)
 	{
-		MessageBox(ghWndMain, (LPCSTR)"Memory allocation error.",
-			(LPCSTR)"Error!", MB_OK | MB_ICONSTOP);
+		// Memory allocation error
 		ExitProcess(1);
 	}
 
-	/*  and set up the pointers to each bit */
+	/*  set up pointers to each bit */
 	blocks = (WAVEHDR*)buff;
 	buff += sizeof(WAVEHDR) * count;
 
@@ -728,7 +751,6 @@ WAVEHDR* allocateBlocks(int size, int count)
 
 void freeBlocks(WAVEHDR* blockArray)
 {
-	/* and this is why allocateBlocks works the way it does */
 	HeapFree(GetProcessHeap(), 0, blockArray);
 }
 
