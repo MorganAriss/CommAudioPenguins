@@ -1,3 +1,61 @@
+/*------------------------------------------------------------------------------------------------------------------
+-- SOURCE FILE: client.cpp - Application that allows users to upload, 
+--
+-- PROGRAM: inotd
+--
+-- FUNCTIONS:
+-- LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
+-- BOOL CALLBACK MainDlgProc(HWND, UINT, WPARAM, LPARAM);
+-- HWND InitializeGUI(HINSTANCE, int);
+-- void InitializeWindow(HWND);
+-- BOOL CALLBACK ServerProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
+-- BOOL CALLBACK ClientProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
+-- void initializeClient(HWND hwnd, int type);
+-- void initializeServer(HWND hwnd, int type);
+-- void initializeButtons(void);
+-- BOOL initializeLocalFile(HWND hwnd, char * filename);
+-- void stopLocalFile(void);
+-- BOOL browseLocalFiles(HWND hwnd, PTSTR pstrFileName, PTSTR pstrTitleName);
+-- void writeAudio(LPSTR data, int size);
+-- void freeBlocks(WAVEHDR* blockArray);
+-- WAVEHDR* allocateBlocks(int size, int count);
+-- static void CALLBACK waveOutProc(HWAVEOUT hWaveOut, UINT uMsg, DWORD dwInstance, DWORD dwParam1, DWORD dwParam2);
+-- DWORD WINAPI receiveStream(LPVOID iValue);
+-- DWORD WINAPI sendStream(LPVOID iValue);
+-- DWORD WINAPI receiveMicThread(LPVOID iValue);
+-- void serverDownload(WPARAM wParam, PTSTR	fileName);
+-- void clientDownload(WPARAM wParam);
+-- void sendFileList(WPARAM wParam);
+-- void receiveFileList(WPARAM wParam, char buf[]);
+-- void GetSelList(char * selItem);
+-- void disconnectActions(void);
+-- void connectActions(void);
+-- void setActions(void);
+-- void checkMenuItem(int);
+-- void beginMicRecord(void);
+-- void sockClose(HWND hwnd, WPARAM wParam, LPARAM lParam);
+-- void Close(HWND hwnd);
+-- void Command(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify);
+-- int Create(HWND hwnd, LPCREATESTRUCT lpCreateStruct);
+-- void Destroy(HWND hwnd);
+-- void Paint(HWND hwnd);
+-- void Size(HWND hwnd, UINT state, int cx, int cy);
+-- void TCPSocket(HWND hwnd, WPARAM wParam, LPARAM lParam);
+--
+-- DATE: April 15 2018
+--
+-- REVISIONS: None
+--
+-- DESIGNER: Morgan Ariss, Anthony Vu, John Tee, Li-Yan Tong
+--
+-- PROGRAMMER: Morgan Ariss, Anthony Vu, John Tee, Li-Yan Tong
+--
+-- NOTES:
+-- This program instantiates a tcp socket that connects to the given ip and port as the username given. Gives the program
+-- for 1 second to connect to the server before timing out. After connecting to the server, shows other users who
+-- connect to the chatroom and displays all messages received from the server along with who sent the message and
+-- the time they sent it. Also allows the user to save the chat log into a file.
+----------------------------------------------------------------------------------------------------------------------*/
 #include "main.h"
 #include "resource.h"
 
@@ -26,6 +84,24 @@ HWAVEOUT		hWaveOut;
 static BOOL		streamActive;
 static HANDLE	streamThread;
 
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: WinMain
+--
+-- DATE: April 15 2018
+--
+-- REVISIONS: None
+--
+-- DESIGNER: Morgan Ariss, Anthony Vu, John Tee, Li-Yan Tong
+--
+-- PROGRAMMER: 
+--
+-- INTERFACE: int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
+--
+-- RETURNS: exit code
+--
+-- NOTES:
+-- Starting point of the program. Initializes the GUI and sends messages to WndProc.
+----------------------------------------------------------------------------------------------------------------------*/
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
 	MSG msg;
@@ -40,6 +116,24 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	return (int)msg.wParam;
 }
 
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: InitializeGUI
+--
+-- DATE: April 15 2018
+--
+-- REVISIONS: None
+--
+-- DESIGNER: Morgan Ariss, Anthony Vu, John Tee, Li-Yan Tong
+--
+-- PROGRAMMER:
+--
+-- INTERFACE: HWND InitializeGUI(HINSTANCE hInst, int nCmdShow)
+--
+-- RETURNS: handle of the GUI
+--
+-- NOTES:
+-- Initializes the GUI.
+----------------------------------------------------------------------------------------------------------------------*/
 HWND InitializeGUI(HINSTANCE hInst, int nCmdShow) {
 	WNDCLASS	wc = { 0 };
 	RECT		rect;
@@ -81,6 +175,24 @@ HWND InitializeGUI(HINSTANCE hInst, int nCmdShow) {
 	return ghWndMain;
 }
 
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: initializeClient
+--
+-- DATE: April 15 2018
+--
+-- REVISIONS: None
+--
+-- DESIGNER: Morgan Ariss, Anthony Vu, John Tee, Li-Yan Tong
+--
+-- PROGRAMMER:
+--
+-- INTERFACE: void initializeClient(HWND hwnd, int type)
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- Sets up the socket for the client. UDP for multicast and TCP for file transfer.
+----------------------------------------------------------------------------------------------------------------------*/
 void initializeClient(HWND hwnd, int type)
 {
 	WSADATA	wsaData;
@@ -142,6 +254,24 @@ void initializeClient(HWND hwnd, int type)
 	}
 }
 
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: initializeServer
+--
+-- DATE: April 15 2018
+--
+-- REVISIONS: None
+--
+-- DESIGNER: Morgan Ariss, Anthony Vu, John Tee, Li-Yan Tong
+--
+-- PROGRAMMER:
+--
+-- INTERFACE: void initializeServer(HWND hwnd, int type)
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- Accepts connection requests from clients. 
+----------------------------------------------------------------------------------------------------------------------*/
 void initializeServer(HWND hwnd, int type)
 {
 	WSADATA	wsaData;
@@ -205,6 +335,24 @@ void initializeServer(HWND hwnd, int type)
 	}
 }
 
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: sendFileList
+--
+-- DATE: April 15 2018
+--
+-- REVISIONS: None
+--
+-- DESIGNER: Morgan Ariss, Anthony Vu, John Tee, Li-Yan Tong
+--
+-- PROGRAMMER:
+--
+-- INTERFACE: void sendFileList(WPARAM wParam)
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- If a client has requested to download a file, send all .wav files to the client. 
+----------------------------------------------------------------------------------------------------------------------*/
 void sendFileList(WPARAM wParam)
 {
 	char buf[FILE_BUFF_SIZE];
@@ -241,6 +389,24 @@ void sendFileList(WPARAM wParam)
 	}
 }
 
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: receiveFileList
+--
+-- DATE: April 15 2018
+--
+-- REVISIONS: None
+--
+-- DESIGNER: Morgan Ariss, Anthony Vu, John Tee, Li-Yan Tong
+--
+-- PROGRAMMER:
+--
+-- INTERFACE: void receiveFileList(WPARAM wParam, char buf[])
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- Display all .wav files to the ListBox in the GUI client-side.
+----------------------------------------------------------------------------------------------------------------------*/
 void receiveFileList(WPARAM wParam, char buf[])
 {
 	char *pch, *nextToken;
@@ -260,12 +426,48 @@ void receiveFileList(WPARAM wParam, char buf[])
 	}
 }
 
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: GetSelList
+--
+-- DATE: April 15 2018
+--
+-- REVISIONS: None
+--
+-- DESIGNER: Morgan Ariss, Anthony Vu, John Tee, Li-Yan Tong
+--
+-- PROGRAMMER:
+--
+-- INTERFACE: void GetSelList(char * selItem)
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- Get all .wav files displayed in the ListBox in the GUI client-side.
+----------------------------------------------------------------------------------------------------------------------*/
 void GetSelList(char * selItem) {
 	HWND list = GetDlgItem(ghDlgMain, IDC_LST_PLAY);
 
 	ListBox_GetText(list, ListBox_GetCurSel(list), selItem);
 }
 
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: browseLocalFiles
+--
+-- DATE: April 15 2018
+--
+-- REVISIONS: None
+--
+-- DESIGNER: Morgan Ariss, Anthony Vu, John Tee, Li-Yan Tong
+--
+-- PROGRAMMER:
+--
+-- INTERFACE: BOOL browseLocalFiles(HWND hwnd, PTSTR pstrFileName, PTSTR pstrTitleName)
+--
+-- RETURNS: True if a file has been selected
+--
+-- NOTES:
+-- Opens a dialog box to allow the user to select a file.
+----------------------------------------------------------------------------------------------------------------------*/
 BOOL browseLocalFiles(HWND hwnd, PTSTR pstrFileName, PTSTR pstrTitleName)
 {
 	ofn.hwndOwner = hwnd;
@@ -275,6 +477,24 @@ BOOL browseLocalFiles(HWND hwnd, PTSTR pstrFileName, PTSTR pstrTitleName)
 	return GetOpenFileName(&ofn);
 }
 
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: initializeButtons
+--
+-- DATE: April 15 2018
+--
+-- REVISIONS: None
+--
+-- DESIGNER: Morgan Ariss, Anthony Vu, John Tee, Li-Yan Tong
+--
+-- PROGRAMMER:
+--
+-- INTERFACE: void initializeButtons()
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- Initializes GUI elements depending on the mode chosen by the user.
+----------------------------------------------------------------------------------------------------------------------*/
 void initializeButtons() {
 	if (cInfo.request == MULTI_STREAM) {
 		SetWindowText(GetDlgItem(ghDlgMain, IDC_BTN_PAUSE), (LPCSTR)"Mute");
@@ -308,6 +528,24 @@ void initializeButtons() {
 	}
 }
 
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: connectActions
+--
+-- DATE: April 15 2018
+--
+-- REVISIONS: None
+--
+-- DESIGNER: Morgan Ariss, Anthony Vu, John Tee, Li-Yan Tong
+--
+-- PROGRAMMER:
+--
+-- INTERFACE: void connectActions()
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- Enables and disables menu items once the user clicks the connect button.
+----------------------------------------------------------------------------------------------------------------------*/
 void connectActions() {
 	EnableMenuItem(ghMenu, ID_FILE_CONNECT, MF_GRAYED);
 	EnableMenuItem(ghMenu, ID_FILE_DISCONNECT, MF_ENABLED);
@@ -317,6 +555,24 @@ void connectActions() {
 	stopLocalFile();
 }
 
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: disconnectActions
+--
+-- DATE: April 15 2018
+--
+-- REVISIONS: None
+--
+-- DESIGNER: Morgan Ariss, Anthony Vu, John Tee, Li-Yan Tong
+--
+-- PROGRAMMER:
+--
+-- INTERFACE: void disconnectActions()
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- Enables and disables menu items once the user clicks the disconnect button.
+----------------------------------------------------------------------------------------------------------------------*/
 void disconnectActions() {
 	EnableMenuItem(ghMenu, ID_FILE_CONNECT, MF_GRAYED);
 	EnableMenuItem(ghMenu, ID_FILE_DISCONNECT, MF_GRAYED);
@@ -325,6 +581,24 @@ void disconnectActions() {
 	checkMenuItem(0);
 }
 
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: setActions
+--
+-- DATE: April 15 2018
+--
+-- REVISIONS: None
+--
+-- DESIGNER: Morgan Ariss, Anthony Vu, John Tee, Li-Yan Tong
+--
+-- PROGRAMMER:
+--
+-- INTERFACE: void setActions()
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- Enables and disables menu items depending on the mode that the user has chosen.
+----------------------------------------------------------------------------------------------------------------------*/
 void setActions() {
 	if (cInfo.mode == CLIENT) {
 		CheckMenuItem(ghMenu, ID_MODE_CLIENT, MF_CHECKED);
@@ -364,6 +638,24 @@ void setActions() {
 	}
 }
 
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: checkMenuItem
+--
+-- DATE: April 15 2018
+--
+-- REVISIONS: None
+--
+-- DESIGNER: Morgan Ariss, Anthony Vu, John Tee, Li-Yan Tong
+--
+-- PROGRAMMER:
+--
+-- INTERFACE: void checkMenuItem(int item)
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- Sets the state of the specified menu item's check-mark attribute to either selected or clear. 
+----------------------------------------------------------------------------------------------------------------------*/
 void checkMenuItem(int item) {
 	CheckMenuItem(ghMenu, ID_SINGLE_DL, MF_UNCHECKED);
 	CheckMenuItem(ghMenu, ID_SINGLE_UP, MF_UNCHECKED);
@@ -383,6 +675,24 @@ void checkMenuItem(int item) {
 	}
 }
 
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: initializeLocalFile
+--
+-- DATE: April 15 2018
+--
+-- REVISIONS: None
+--
+-- DESIGNER: Morgan Ariss, Anthony Vu, John Tee, Li-Yan Tong
+--
+-- PROGRAMMER:
+--
+-- INTERFACE: BOOL initializeLocalFile(HWND hwnd, char * fileName)
+--
+-- RETURNS: true if initialization of file is successful
+--
+-- NOTES:
+-- Sets up the device information and opens audio file, then plays the audio
+----------------------------------------------------------------------------------------------------------------------*/
 BOOL initializeLocalFile(HWND hwnd, char * fileName)
 {
 	MCI_WAVE_OPEN_PARMS	openParams;
@@ -413,13 +723,28 @@ BOOL initializeLocalFile(HWND hwnd, char * fileName)
 	return TRUE;
 }
 
-
-BOOL stopLocalFile(void)
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: stopLocalFile
+--
+-- DATE: April 15 2018
+--
+-- REVISIONS: None
+--
+-- DESIGNER: Morgan Ariss, Anthony Vu, John Tee, Li-Yan Tong
+--
+-- PROGRAMMER:
+--
+-- INTERFACE: void stopLocalFile(void)
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- Stops the audio file and close the device
+----------------------------------------------------------------------------------------------------------------------*/
+void stopLocalFile(void)
 {
 	MCI_GENERIC_PARMS stop;
 	MCI_GENERIC_PARMS close;
-
-	int          errno;
 
 	if (deviceID)
 	{
@@ -431,11 +756,26 @@ BOOL stopLocalFile(void)
 
 		deviceID = 0;
 	}
-	return TRUE;
 }
 
-#define INP_BUFFER_SIZE 44100
-
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: beginMicRecord
+--
+-- DATE: April 15 2018
+--
+-- REVISIONS: None
+--
+-- DESIGNER: Morgan Ariss, Anthony Vu, John Tee, Li-Yan Tong
+--
+-- PROGRAMMER:
+--
+-- INTERFACE: void beginMicRecord()
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- Set up buffers, wave format, and WAVEHDR struct.
+----------------------------------------------------------------------------------------------------------------------*/
 void beginMicRecord()
 {
 	pWaveHdr1 = reinterpret_cast<PWAVEHDR> (malloc(sizeof(WAVEHDR)));
@@ -499,9 +839,9 @@ void beginMicRecord()
 /*-------------------------------------------------------------------------------------------------
 --	FUNCTION:	ReceiveStream()
 --
---	DATE:		April 3rd, 2018
+--	DATE:		April 15, 2018
 --
---	DESIGNER:	Morgan Ariss
+--	DESIGNER:	Morgan Ariss, Anthony Vu, John Tee, Li-Yan Tong
 --
 --	PROGRAMMER:	Morgan Ariss
 --
@@ -592,6 +932,24 @@ DWORD WINAPI receiveStream(LPVOID iValue)
 	ExitThread(0);
 }
 
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: sendStream
+--
+-- DATE: April 15 2018
+--
+-- REVISIONS: None
+--
+-- DESIGNER: Morgan Ariss, Anthony Vu, John Tee, Li-Yan Tong
+--
+-- PROGRAMMER:
+--
+-- INTERFACE: DWORD WINAPI sendStream(LPVOID iValue)
+--
+-- RETURNS: DWORD
+--
+-- NOTES:
+-- Thread for streaming audio to all connected clients (multicast).
+----------------------------------------------------------------------------------------------------------------------*/
 DWORD WINAPI sendStream(LPVOID iValue)
 {
 	HANDLE	hFile;
@@ -655,6 +1013,7 @@ DWORD WINAPI sendStream(LPVOID iValue)
 	ExitThread(0);
 }
 
+static void CALLBACK waveOutProc(HWAVEOUT hWaveOut, UINT uMsg, DWORD dwInstance, DWORD dwParam1, DWORD dwParam2)
 /*-----------------------------------------------------------------------------
 --	FUNCTION:		waveOutProc
 --
@@ -680,8 +1039,6 @@ DWORD WINAPI sendStream(LPVOID iValue)
 --		the audio file this work is done in a separate thread. It tracks free
 --		blocks in a critical section counteracted by the writeAudio function.
 -----------------------------------------------------------------------------*/
-static void CALLBACK waveOutProc(HWAVEOUT hWaveOut, UINT uMsg, DWORD dwInstance,
-	DWORD dwParam1, DWORD dwParam2)
 {
 	int* freeBlockCounter = (int*)dwInstance;
 
@@ -749,11 +1106,47 @@ WAVEHDR* allocateBlocks(int size, int count)
 	return blocks;
 }
 
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: freeBlocks
+--
+-- DATE: April 15 2018
+--
+-- REVISIONS: None
+--
+-- DESIGNER: Morgan Ariss, Anthony Vu, John Tee, Li-Yan Tong
+--
+-- PROGRAMMER:
+--
+-- INTERFACE: void freeBlocks(WAVEHDR* blockArray)
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- Free WAVEHDR struct
+----------------------------------------------------------------------------------------------------------------------*/
 void freeBlocks(WAVEHDR* blockArray)
 {
 	HeapFree(GetProcessHeap(), 0, blockArray);
 }
 
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: writeAudio
+--
+-- DATE: April 15 2018
+--
+-- REVISIONS: None
+--
+-- DESIGNER: Morgan Ariss, Anthony Vu, John Tee, Li-Yan Tong
+--
+-- PROGRAMMER:
+--
+-- INTERFACE: void writeAudio(LPSTR data, int size)
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- Write audio data in blocks to the WAVEHDR struct.
+----------------------------------------------------------------------------------------------------------------------*/
 void writeAudio(LPSTR data, int size)
 {
 	WAVEHDR* current;
@@ -799,6 +1192,24 @@ void writeAudio(LPSTR data, int size)
 	}
 }
 
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: receiveMicThread
+--
+-- DATE: April 15 2018
+--
+-- REVISIONS: None
+--
+-- DESIGNER: Morgan Ariss, Anthony Vu, John Tee, Li-Yan Tong
+--
+-- PROGRAMMER:
+--
+-- INTERFACE: DWORD WINAPI receiveMicThread(LPVOID iValue)
+--
+-- RETURNS: DWORD
+--
+-- NOTES:
+-- Thread to receive and send audio from microphones.
+----------------------------------------------------------------------------------------------------------------------*/
 DWORD WINAPI receiveMicThread(LPVOID iValue) {
 	char micBuff[BLOCK_SIZE];
 	int rLen;
@@ -835,6 +1246,24 @@ DWORD WINAPI receiveMicThread(LPVOID iValue) {
 	}
 }
 
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: serverDownload
+--
+-- DATE: April 15 2018
+--
+-- REVISIONS: None
+--
+-- DESIGNER: Morgan Ariss, Anthony Vu, John Tee, Li-Yan Tong
+--
+-- PROGRAMMER:
+--
+-- INTERFACE: void serverDownload(WPARAM wParam, PTSTR fileName)
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- Called when client is uploading an audio file to the server.
+----------------------------------------------------------------------------------------------------------------------*/
 void serverDownload(WPARAM wParam, PTSTR fileName)
 {
 	char outBuf[FILE_BUFF_SIZE];
