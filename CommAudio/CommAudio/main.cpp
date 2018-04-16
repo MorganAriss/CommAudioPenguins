@@ -71,6 +71,7 @@ static CRITICAL_SECTION waveCriticalSection;
 static WAVEHDR*			waveBlocks;
 static volatile int		waveFreeBlockCount;
 static int				waveCurrentBlock;
+static int received = FALSE;
 
 TCHAR	szAppName[] = TEXT("Comm Audio");
 
@@ -1013,6 +1014,31 @@ DWORD WINAPI sendStream(LPVOID iValue)
 }
 
 static void CALLBACK waveOutProc(HWAVEOUT hWaveOut, UINT uMsg, DWORD dwInstance, DWORD dwParam1, DWORD dwParam2)
+/*-----------------------------------------------------------------------------
+--	FUNCTION:		waveOutProc
+--
+--	DATE:			April 5th, 2018
+--
+--	REVISIONS:
+--
+--	DESIGNER(S):	Morgan Ariss
+--	PROGRAMMER(S):	Morgan Ariss
+--
+--	INTERFACE:		waveOutProc(HWAVEOUT hWaveOut, UINT uMsg, DWORD dwInstance,
+--								DWORD dwParam1, DWORD dwParam2)
+--
+--	ARGUMENTS:		HWAVEOUT hWaveOut: Handle to the audio output device
+--					UINT uMesg: Message that the procedure handles
+--					DWORD dwInstance: The procedure's instance
+--					DWORD dwParam1 & dwParam2: Unknown and forgotten.
+--
+--	RETURNS:		void
+--
+--	NOTES: 
+--		The callback function which is used in the asynchronous call to play
+--		the audio file this work is done in a separate thread. It tracks free
+--		blocks in a critical section counteracted by the writeAudio function.
+-----------------------------------------------------------------------------*/
 {
 	int* freeBlockCounter = (int*)dwInstance;
 
@@ -1025,6 +1051,30 @@ static void CALLBACK waveOutProc(HWAVEOUT hWaveOut, UINT uMsg, DWORD dwInstance,
 	LeaveCriticalSection(&waveCriticalSection);
 }
 
+
+/*-----------------------------------------------------------------------------
+--	FUNCTION:		allocateBlocks
+--
+--	DATE:			April 7th, 2018
+--
+--	REVISIONS:
+--
+--	DESIGNER(S):	Morgan Ariss
+--
+--	PROGRAMMER(S):	Morgan Ariss
+--
+--	INTERFACE:		allocateBlocks(int size, int count)
+--						
+--	ARGUMENTS:		int size: size of each block
+--					int count: number of blocks
+--
+--	RETURNS:		WAVEHDR*: Pointer to the allocated blocks.
+--
+--	NOTES: 
+--		Allocates a buffer for data to be received in. Frees up any existing blocks.
+--		Performs a heapAlloc to ready the entire set; if this fails the process exits.
+--		Sets up pointers for each bit, returns the WAVEHDR* of blocks.
+-----------------------------------------------------------------------------*/
 WAVEHDR* allocateBlocks(int size, int count)
 {
 	unsigned char* buff;
@@ -1038,12 +1088,11 @@ WAVEHDR* allocateBlocks(int size, int count)
 	/* allocate memory for the entire set in one go */
 	if ((buff = reinterpret_cast<unsigned char *> (HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, totalbuffSize))) == NULL)
 	{
-		MessageBox(ghWndMain, (LPCSTR)"Memory allocation error.",
-			(LPCSTR)"Error!", MB_OK | MB_ICONSTOP);
+		// Memory allocation error
 		ExitProcess(1);
 	}
 
-	/*  and set up the pointers to each bit */
+	/*  set up pointers to each bit */
 	blocks = (WAVEHDR*)buff;
 	buff += sizeof(WAVEHDR) * count;
 
@@ -1077,7 +1126,6 @@ WAVEHDR* allocateBlocks(int size, int count)
 ----------------------------------------------------------------------------------------------------------------------*/
 void freeBlocks(WAVEHDR* blockArray)
 {
-	/* and this is why allocateBlocks works the way it does */
 	HeapFree(GetProcessHeap(), 0, blockArray);
 }
 
@@ -1237,7 +1285,6 @@ void serverDownload(WPARAM wParam, PTSTR fileName)
 		ReadFile(hFile, outBuf, FILE_BUFF_SIZE, &bytesRead, NULL);
 		if (bytesRead == 0)
 		{
-			/* End of file, close & exit. */
 			send(wParam, "Last Pkt\0", 9, 0);
 			CancelIo(hFile);
 			break;
@@ -1252,10 +1299,34 @@ void serverDownload(WPARAM wParam, PTSTR fileName)
 				closesocket(wParam);
 			}
 		}
-		Sleep(1); /* Give the client some time to catch up with us */
+		Sleep(1); 
 	}
 }
 
+
+
+/*-------------------------------------------------------------------------------------------------
+--	FUNCTION:	clientDownload()
+--
+--	DATE:		April 3rd, 2018
+--
+--	DESIGNER:	Morgan Ariss
+--
+--	PROGRAMMER:	Morgan Ariss
+--
+--	INTERFACE:	clientDownload(WPARAM wParam)
+--
+--	ARGUMENTS:	LPVOID iValue
+--
+--	RETURNS:	void
+--
+--	NOTES:
+--		Called asynchronously upon a request type set to download if the
+--		connection has already been established.  It opens the file and writes the
+--		incoming packet to the end of it, and displays a message when we are done
+--		transferring.
+--
+-------------------------------------------------------------------------------------------------*/
 void clientDownload(WPARAM wParam)
 {
 	char buff[FILE_BUFF_SIZE];
@@ -1802,8 +1873,6 @@ void TCPSocket(HWND hwnd, WPARAM wParam, LPARAM lParam)
 		break;
 	}
 }
-
-static int received = FALSE;
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 	switch (message)
