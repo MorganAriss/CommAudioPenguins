@@ -1303,8 +1303,6 @@ void serverDownload(WPARAM wParam, PTSTR fileName)
 	}
 }
 
-
-
 /*-------------------------------------------------------------------------------------------------
 --	FUNCTION:	clientDownload()
 --
@@ -1378,6 +1376,24 @@ void clientDownload(WPARAM wParam)
 	}
 }
 
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: sockClose
+--
+-- DATE: April 15 2018
+--
+-- REVISIONS: None
+--
+-- DESIGNER: Morgan Ariss, Anthony Vu, John Tee, Li Tong
+--
+-- PROGRAMMER: John Tee
+--
+-- INTERFACE: void sockClose(HWND hwnd, WPARAM wParam, LPARAM lParam)
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- Called when closing a socket. Also terminates the streaming thread when on multicast mode.
+----------------------------------------------------------------------------------------------------------------------*/
 void sockClose(HWND hwnd, WPARAM wParam, LPARAM lParam)
 {
 	if (lParam != -1) {
@@ -1394,11 +1410,48 @@ void sockClose(HWND hwnd, WPARAM wParam, LPARAM lParam)
 	}
 }
 
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: Close
+--
+-- DATE: April 15 2018
+--
+-- REVISIONS: None
+--
+-- DESIGNER: Morgan Ariss, Anthony Vu, John Tee, Li Tong
+--
+-- PROGRAMMER: Morgan Ariss
+--
+-- INTERFACE: void Close(HWND hwnd)
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- Called when the main window is closed.
+----------------------------------------------------------------------------------------------------------------------*/
 void Close(HWND hwnd)
 {
 	PostQuitMessage(0);
 }
 
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: Command
+--
+-- DATE: April 15 2018
+--
+-- REVISIONS: None
+--
+-- DESIGNER: Morgan Ariss, Anthony Vu, John Tee, Li Tong
+--
+-- PROGRAMMER: Morgan Ariss
+--
+-- INTERFACE: void Command(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- Called when processing the command to either initialize server or client then calls
+-- initializeServer() or initializeClient() with the appropriate sockets.
+----------------------------------------------------------------------------------------------------------------------*/
 void Command(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
 {
 	TCHAR fileName[FILE_BUFF_SIZE];
@@ -1558,6 +1611,24 @@ void Command(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
 	}
 }
 
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: Create
+--
+-- DATE: April 15 2018
+--
+-- REVISIONS: None
+--
+-- DESIGNER: Morgan Ariss, Anthony Vu, John Tee, Li Tong
+--
+-- PROGRAMMER: Anthony Vu
+--
+-- INTERFACE: int Create(HWND hwnd, LPCREATESTRUCT lpCreateStruct)
+--
+-- RETURNS: true on success
+--
+-- NOTES:
+-- Called when creating the main window and setting up the menu options.
+----------------------------------------------------------------------------------------------------------------------*/
 int Create(HWND hwnd, LPCREATESTRUCT lpCreateStruct)
 {
 	static TCHAR szFilter[] = TEXT("All Files (*.*)\0*.*\0\0");
@@ -1611,11 +1682,47 @@ int Create(HWND hwnd, LPCREATESTRUCT lpCreateStruct)
 	return TRUE;
 }
 
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: Destroy
+--
+-- DATE: April 15 2018
+--
+-- REVISIONS: None
+--
+-- DESIGNER: Morgan Ariss, Anthony Vu, John Tee, Li Tong
+--
+-- PROGRAMMER: Li Tong
+--
+-- INTERFACE: void Destroy(HWND hwnd)
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- Called when destroying the main window.
+----------------------------------------------------------------------------------------------------------------------*/
 void Destroy(HWND hwnd)
 {
 	PostQuitMessage(0);
 }
 
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: Paint
+--
+-- DATE: April 15 2018
+--
+-- REVISIONS: None
+--
+-- DESIGNER: Morgan Ariss, Anthony Vu, John Tee, Li Tong
+--
+-- PROGRAMMER: Li Tong
+--
+-- INTERFACE: void Paint(HWND hwnd)
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- Called when main window needs to update the window for the user
+----------------------------------------------------------------------------------------------------------------------*/
 void Paint(HWND hwnd)
 {
 	HDC hdc;
@@ -1625,6 +1732,24 @@ void Paint(HWND hwnd)
 	EndPaint(hwnd, &ps);
 }
 
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: Size
+--
+-- DATE: April 15 2018
+--
+-- REVISIONS: None
+--
+-- DESIGNER: Morgan Ariss, Anthony Vu, John Tee, Li Tong
+--
+-- PROGRAMMER: Li Tong
+--
+-- INTERFACE: void Size(HWND hwnd, UINT state, int cy, int cx)
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- Called when resizing the window.
+----------------------------------------------------------------------------------------------------------------------*/
 void Size(HWND hwnd, UINT state, int cy, int cx)
 {
 	WORD wTop = 0;
@@ -1637,6 +1762,28 @@ void Size(HWND hwnd, UINT state, int cy, int cx)
 	MoveWindow(ghDlgMain, 0, wTop, wWidth, wHeight, TRUE);
 }
 
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: TCPSocket
+--
+-- DATE: April 15 2018
+--
+-- REVISIONS: None
+--
+-- DESIGNER: Morgan Ariss, Anthony Vu, John Tee, Li Tong
+--
+-- PROGRAMMER: John Tee
+--
+-- INTERFACE: void TCPSocket(HWND hwnd, WPARAM wParam, LPARAM lParam)
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- Called when the client or server needs to set up a connection.
+-- As the server:
+--		-Listens for and accepts incoming TCP connections thens starts either multicasting, file transfer or microphone chat.
+-- As the client:
+--		-Connects to the server and starts receiving multicasted audio, file transfer, or microphone chat.
+----------------------------------------------------------------------------------------------------------------------*/
 void TCPSocket(HWND hwnd, WPARAM wParam, LPARAM lParam)
 {
 	SOCKET sock;
@@ -1874,6 +2021,24 @@ void TCPSocket(HWND hwnd, WPARAM wParam, LPARAM lParam)
 	}
 }
 
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: WndProc
+--
+-- DATE: April 15 2018
+--
+-- REVISIONS: None
+--
+-- DESIGNER: Morgan Ariss, Anthony Vu, John Tee, Li Tong
+--
+-- PROGRAMMER: Morgan Ariss
+--
+-- INTERFACE: LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
+--
+-- RETURNS: Window's default dialog box
+--
+-- NOTES:
+-- Main WndProc that handles memory management when opening and closing connections.
+----------------------------------------------------------------------------------------------------------------------*/
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 	switch (message)
 	{
@@ -2010,6 +2175,24 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 	return DefWindowProc(hWnd, message, wParam, lParam);
 }
 
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: ClientProc
+--
+-- DATE: April 15 2018
+--
+-- REVISIONS: None
+--
+-- DESIGNER: Morgan Ariss, Anthony Vu, John Tee, Li Tong
+--
+-- PROGRAMMER: Anthony Vu
+--
+-- INTERFACE: BOOL CALLBACK ClientProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+--
+-- RETURNS: true on success, false on failure
+--
+-- NOTES:
+-- Called by client to select menu options.
+----------------------------------------------------------------------------------------------------------------------*/
 BOOL CALLBACK ClientProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message)
@@ -2040,6 +2223,24 @@ BOOL CALLBACK ClientProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 	return FALSE;
 }
 
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: ServerProc
+--
+-- DATE: April 15 2018
+--
+-- REVISIONS: None
+--
+-- DESIGNER: Morgan Ariss, Anthony Vu, John Tee, Li Tong
+--
+-- PROGRAMMER: Li Tong
+--
+-- INTERFACE: BOOL CALLBACK ServerProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+--
+-- RETURNS: true on success, false on failure
+--
+-- NOTES:
+-- Called by server to select whether or not the server wants to multicast or not.
+----------------------------------------------------------------------------------------------------------------------*/
 BOOL CALLBACK ServerProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message)
@@ -2070,6 +2271,24 @@ BOOL CALLBACK ServerProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 	return FALSE;
 }
 
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: MainDlgProc
+--
+-- DATE: April 15 2018
+--
+-- REVISIONS: None
+--
+-- DESIGNER: Morgan Ariss, Anthony Vu, John Tee, Li Tong
+--
+-- PROGRAMMER: John Tee
+--
+-- INTERFACE: BOOL CALLBACK MainDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+--
+-- RETURNS: true on success, false on failure
+--
+-- NOTES:
+-- Call this function for selecting controls displayed on the main window such as play, mute, etc.
+----------------------------------------------------------------------------------------------------------------------*/
 BOOL CALLBACK MainDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	HMENU hMenu;
